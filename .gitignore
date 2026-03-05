@@ -1,0 +1,16 @@
+# Virtual environments
+venv*/
+env/
+ENV/
+.venv/
+.env
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+*.bak
+*.tmp
