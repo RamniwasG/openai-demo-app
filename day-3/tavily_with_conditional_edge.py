@@ -6,33 +6,25 @@
 
 
 import os
-import uuid
-import getpass
 import requests
 import operator
 from agents import function_tool
 from typing_extensions import TypedDict
-from typing import List, Dict, Sequence, Annotated, Tuple, Optional, Any, Union, Literal
+from typing import Sequence, Annotated, Literal
 from datetime import date, datetime
 from IPython.display import Markdown, display, Image
-from graphviz import Source
 from dotenv import load_dotenv
 
 # langchain specific imports
-from langchain_core import messages
 from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
-from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain.tools import tool
-from pydantic import BaseModel
 
 # langgraph specific imports
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from IPython.display import Markdown, display
-
-# gradio imports
-import gradio as gr
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -43,10 +35,9 @@ def print_markdown(text: str):
     display(Markdown(text))
 
 # Example usage:
-# print_markdown("# Hello World\nThis is a markdown message.")
 def render_display(text: str, type: str = "rich"):
     if type == "markdown":
-        print_markdown(text)
+        print(text)
     elif type == "rich":
         try:
             from rich import print
@@ -109,7 +100,7 @@ tool_list_single = [tavily_search_tool]
 
 def make_call_model_with_tools(tools: list):
     # inner function to call the model with tools, this will be used in the graph nodes to execute the model with the provided tools and update the state accordingly. 
-    def call_model_with_tools(state: AgentState) -> AgentState:
+    def call_model_with_tools(state: AgentState):
         print("Debug: Entering call_model_with_tools:")
         messages = state.get("messages", [])
    
@@ -120,7 +111,7 @@ def make_call_model_with_tools(tools: list):
         response = model_with_tools.invoke(messages)
    
         return {
-            "messages": messages + [response]
+            "messages": [response]
         }
    
     return call_model_with_tools
@@ -178,13 +169,15 @@ def build_graph_one_tool(tools_list):
 
 
 def app_call(app, messages):
-    
+    print("Debug: Starting app_call with messages:")
+    print(messages)
     initial_state = {"messages": [HumanMessage(content=messages)]}
 
     final_state = app.invoke(initial_state)
-
-    for i in final_state["messages"]:
-        render_display(f"**{i.type}**: {i.content}\n")
+    print("Debug: Final state after app invocation:")
+    # print(final_state) 
+    # for i in final_state["messages"]:
+    #     print(f"**{i.type}**: {i.content}\n")
 
     return final_state["messages"][-1].content, final_state
 
@@ -208,9 +201,10 @@ def get_current_date_tool() -> str:
 
 app_current_date = build_graph_one_tool([get_current_date_tool])
 
-prompt = input("Enter your query please! \n ")
+# prompt = input("Enter your query please! \n ")
+prompt = "What is the current date and time? "
 
 history, output = app_call(app_current_date, prompt)
 
-render_display(f"### Final Output: \n {output}")
-render_display(f"### Final State: \n {history}")
+# render_display(f"### Final Output: \n {output}")
+# render_display(f"### Final State: \n {history}")
